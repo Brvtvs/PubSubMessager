@@ -6,7 +6,7 @@ package io.brutus.networking.pubsubmessager;
  * All messaging is asynchronous and non-blocking, even to local subscribers.
  * <p>
  * For more about the pub/sub messaging paradigm, see <a
- * href=http://en.wikipedia.org/wiki/Publish%E2
+ * href="http://en.wikipedia.org/wiki/Publish%E2
  * %80%93subscribe_pattern">http://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern</a>
  */
 public interface PubSubMessager {
