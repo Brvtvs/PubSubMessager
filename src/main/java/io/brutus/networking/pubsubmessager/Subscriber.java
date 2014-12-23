@@ -10,8 +10,8 @@ public interface Subscriber {
    * <p>
    * No guarantees are made about what thread this will be called from.
    * 
-   * @param channel The channel that the message was sent on.
-   * @param message The message.
+   * @param channel A defensive copy of the channel that the message was sent on.
+   * @param message A defensive copy of the message that was received.
    */
   void onMessage(byte[] channel, byte[] message);
 
