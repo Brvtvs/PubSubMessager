@@ -56,6 +56,15 @@ public class ByteArrayWrapper {
     }
   }
 
+  /**
+   * Gets a defensive copy of the byte array that this is wrapping.
+   * 
+   * @return This wrapper's byte array.
+   */
+  public byte[] getData() {
+    return data.clone();
+  }
+
   @Override
   public boolean equals(Object other) {
     if (!(other instanceof ByteArrayWrapper)) {
