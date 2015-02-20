@@ -108,7 +108,10 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
   @Override
   public final void destroy() {
     destroyed = true;
-    super.unsubscribe();
+    try {
+      super.unsubscribe();
+    } catch (NullPointerException e) {
+    }
     jedisPool.destroy();
   }
 
@@ -230,6 +233,7 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
             try {
               Thread.sleep(RECONNECT_PERIOD_MILLIS);
             } catch (InterruptedException e) {
+              destroyed = true;
               System.out.println("[PubSub] Reconnection pause thread was interrupted.");
               e.printStackTrace();
             }
