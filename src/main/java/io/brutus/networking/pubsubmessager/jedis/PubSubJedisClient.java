@@ -16,6 +16,8 @@ import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.BinaryJedisPubSub;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Protocol;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 
@@ -55,18 +57,30 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
 
   private final JedisPool jedisPool;
   private final ExecutorService threadPool;
-  private Subscriber sub;
+  private volatile Subscriber sub;
 
   private Set<ByteArrayWrapper> channels;
 
   private volatile boolean subscribed; // Is there a base subscription yet?
   private volatile boolean destroyed; // has this been deliberately destroyed?
 
-  public PubSubJedisClient(JedisPool jedisPool) {
-    if (jedisPool == null) {
-      throw new IllegalArgumentException("jedis pool cannot be null");
+  /**
+   * Class constructor.
+   * 
+   * @param redisInstance The connection info for the redis instance this client should connect to.
+   */
+  public PubSubJedisClient(RedisConnectionInfo redisInstance) {
+    if (redisInstance == null) {
+      throw new IllegalArgumentException("redis instance info cannot be null");
     }
-    this.jedisPool = jedisPool;
+    if (redisInstance.getPassword() == null || redisInstance.getPassword().equals("")) {
+      jedisPool =
+          new JedisPool(new JedisPoolConfig(), redisInstance.getHost(), redisInstance.getPort());
+    } else {
+      jedisPool =
+          new JedisPool(new JedisPoolConfig(), redisInstance.getHost(), redisInstance.getPort(),
+              Protocol.DEFAULT_TIMEOUT, redisInstance.getPassword());
+    }
     this.threadPool = Executors.newCachedThreadPool();
     this.channels = new HashSet<ByteArrayWrapper>();
 
