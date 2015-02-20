@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.brutus.networking</groupId>
 	<artifactId>pubsubmessager</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<name>PubSubMessager</name>
 	<description>A small Java library for multi-client, thread-safe pub-sub messager modules.</description>
 
