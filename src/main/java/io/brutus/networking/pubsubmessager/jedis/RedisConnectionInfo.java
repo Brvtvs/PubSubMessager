@@ -14,8 +14,18 @@ public class RedisConnectionInfo {
   private final int port;
   private final String password;
 
+  /**
+   * Class constructor.
+   * 
+   * @param name The arbitrary name to associate with this redis connection, if any. Can be
+   *        <code>null</code> for no name.
+   * @param host The host of the connection.
+   * @param port The port of the connection.
+   * @param password The password to authenticate with, if any. Can be <code>null</code> if no
+   *        password is needed.
+   */
   public RedisConnectionInfo(String name, String host, int port, String password) {
-    if (name == null || name.equals("") || host == null || host.equals("")) {
+    if (host == null || host.equals("")) {
       throw new IllegalArgumentException("name and host cannot be null or empty");
     }
     this.name = name;
@@ -24,19 +34,38 @@ public class RedisConnectionInfo {
     this.password = password;
   }
 
-
+  /**
+   * Gets the arbitrarily defined name of this connection, if there is one.
+   * 
+   * @return The name of this connection. <code>null</code> or empty if there is none.
+   */
   public String getName() {
     return name;
   }
 
+  /**
+   * Gets the host for this connection.
+   * 
+   * @return The connection's host.
+   */
   public String getHost() {
     return host;
   }
 
+  /**
+   * The port of this connection.
+   * 
+   * @return This connection's port.
+   */
   public int getPort() {
     return port;
   }
 
+  /**
+   * The password to use when authenticating this connection, if any.
+   * 
+   * @return This connection's password. <code>null</code> or empty if none.
+   */
   public String getPassword() {
     return password;
   }
