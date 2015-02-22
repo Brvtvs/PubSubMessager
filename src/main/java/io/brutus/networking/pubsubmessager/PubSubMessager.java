@@ -1,5 +1,7 @@
 package io.brutus.networking.pubsubmessager;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
  * Messager for standard pub/sub model. Handles multiple publishers and subscribers.
  * <p>
@@ -23,8 +25,15 @@ public interface PubSubMessager {
    * 
    * @param channel The channel to publish the message on.
    * @param message The message to send.
+   * @return A future object that will complete after an unknown amount of time with
+   *         <code>false</code> if for some known reason the message definitely could not be
+   *         published, else completes with <code>true</code>. <code>true</code> does not mean the
+   *         message was published successfully to all of its subscribers; this guarantee cannot be
+   *         made because messages may fail for many unknown and undetectable reasons.
+   *         <code>true</code> just means that there was not an obvious, definite reason that it
+   *         failed, such as if this messager cannot connect to its backend at all.
    */
-  void publish(byte[] channel, byte[] message);
+  ListenableFuture<Boolean> publish(byte[] channel, byte[] message);
 
   /**
    * Subscribes to a messaging channel.

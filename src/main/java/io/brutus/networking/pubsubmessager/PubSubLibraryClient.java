@@ -1,13 +1,30 @@
 package io.brutus.networking.pubsubmessager;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
- * A multi-channel subscription to a pub/sub messaging implementation. An interface to the actual
- * low-level pub/sub library, whatever it may be.
+ * A multi-channel subscription and publisher to a pub/sub messaging implementation. An interface to
+ * the actual low-level pub/sub library, whatever it may be.
  * 
  * For the sake of internal efficiency, this makes no guarantees for the sanity or unchangeability
  * of arguments passed into its methods. Clients should not generally interact with this directly.
  */
-public interface PubSubLibrarySubscription {
+public interface PubSubLibraryClient {
+
+  /**
+   * Publishes a message to all subscribers of a given channel.
+   * 
+   * @param channel The channel to publish the message on.
+   * @param message The message to send.
+   * @return A future object that will complete after an unknown amount of time with
+   *         <code>false</code> if for some known reason the message definitely could not be
+   *         published, else completes with <code>true</code>. <code>true</code> does not mean the
+   *         message was published successfully to all of its subscribers; this guarantee cannot be
+   *         made because messages may fail for many unknown and undetectable reasons.
+   *         <code>true</code> just means that there was not an obvious, definite reason that it
+   *         failed, such as if this messager cannot connect to its backend at all.
+   */
+  ListenableFuture<Boolean> publish(byte[] channel, byte[] message);
 
   /**
    * Adds a channel to this subscription.

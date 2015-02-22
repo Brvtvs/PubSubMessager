@@ -1,8 +1,7 @@
 package io.brutus.networking.pubsubmessager.jedis;
 
 import io.brutus.networking.pubsubmessager.ByteArrayWrapper;
-import io.brutus.networking.pubsubmessager.PubSubLibrarySubscription;
-import io.brutus.networking.pubsubmessager.Publisher;
+import io.brutus.networking.pubsubmessager.PubSubLibraryClient;
 import io.brutus.networking.pubsubmessager.Subscriber;
 
 import java.nio.charset.Charset;
@@ -11,6 +10,9 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
 import redis.clients.jedis.BinaryJedis;
 import redis.clients.jedis.BinaryJedisPubSub;
@@ -49,8 +51,7 @@ import redis.clients.jedis.exceptions.JedisDataException;
  * <p>
  * When {@link #unsubscribe()} or {@link #destroy()} is called, this class ceases operation.
  */
-public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrarySubscription,
-    Publisher {
+public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibraryClient {
 
   private static final long RECONNECT_PERIOD_MILLIS = 800;
   private static final byte[] BASE_CHANNEL = "pG8n5jp#".getBytes(Charset.forName("UTF-8"));
@@ -143,7 +144,10 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
   }
 
   @Override
-  public final void publish(final byte[] channel, final byte[] message) {
+  public final ListenableFuture<Boolean> publish(final byte[] channel, final byte[] message) {
+    // TODO add more context sensitivity (ex: are we currently successfully subscribed) and possibly
+    // multiple retries within this class?
+    final SettableFuture<Boolean> ret = SettableFuture.create();
     threadPool.execute(new Runnable() {
       @Override
       public void run() {
@@ -152,6 +156,7 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
           bJedis = jedisPool.getResource();
           bJedis.publish(channel, message);
           jedisPool.returnResource((Jedis) bJedis);
+          ret.set(true);
 
         } catch (Exception e) {
           System.out.println("Encountered issue while publishing a message.");
@@ -159,9 +164,11 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
           if (bJedis != null) {
             jedisPool.returnBrokenResource((Jedis) bJedis);
           }
+          ret.set(false);
         }
       }
     });
+    return ret;
   }
 
   // Confirms successful subscriptions/unsubscriptions.

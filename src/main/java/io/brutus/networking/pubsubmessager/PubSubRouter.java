@@ -7,6 +7,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.google.common.util.concurrent.ListenableFuture;
+
 /**
  * A pub/sub messager that simply routes messages to some underlying pub/sub implementation, which
  * is in turn represented by a multi-channel subscription and a publishing mechanism.
@@ -20,8 +22,7 @@ import java.util.concurrent.Executors;
  */
 public class PubSubRouter implements PubSubMessager, Subscriber {
 
-  private final Publisher publisher;
-  private final PubSubLibrarySubscription subscription;
+  private final PubSubLibraryClient pubSubClient;
   private final Map<ByteArrayWrapper, Set<Subscriber>> subscribers;
 
   private final ExecutorService threadPool;
@@ -29,14 +30,13 @@ public class PubSubRouter implements PubSubMessager, Subscriber {
   // TODO consider adding a few more comments to clarify what is going on here
   // TODO Is this fully, entirely thread-safe?
 
-  public PubSubRouter(PubSubLibrarySubscription subscription, Publisher publisher) {
-    if (subscription == null || publisher == null) {
+  public PubSubRouter(PubSubLibraryClient client) {
+    if (client == null) {
       throw new IllegalArgumentException("jedis pool cannot be null");
     }
 
-    this.publisher = publisher;
-    this.subscription = subscription;
-    subscription.setSubscriber(this);
+    this.pubSubClient = client;
+    this.pubSubClient.setSubscriber(this);
     this.subscribers = new ConcurrentHashMap<ByteArrayWrapper, Set<Subscriber>>();
 
     this.threadPool = Executors.newCachedThreadPool();
@@ -44,22 +44,21 @@ public class PubSubRouter implements PubSubMessager, Subscriber {
 
 
   @Override
-  public final void publish(byte[] channel, byte[] message) {
+  public final ListenableFuture<Boolean> publish(byte[] channel, byte[] message) {
     if (channel == null) {
-      // TODO test this
-      // messages of 0 length are allowed. Null messages are treated as messages of 0 length.
       throw new NullPointerException();
     } else if (channel.length < 1) {
       throw new IllegalArgumentException("the channel name cannot be empty");
     }
 
+    // messages of 0 length are allowed. Null messages are treated as messages of 0 length.
     if (message == null) {
       message = new byte[0];
     } else {
       message = message.clone(); // defensive copying
     }
 
-    publisher.publish(channel, message);
+    return pubSubClient.publish(channel, message);
   }
 
   @Override
@@ -84,7 +83,7 @@ public class PubSubRouter implements PubSubMessager, Subscriber {
       subscribers.put(hashableChannel, channelSubs);
 
       // starts a jedis subscription to the channel if there were no subscribers before
-      subscription.addChannel(safeChannel);
+      pubSubClient.addChannel(safeChannel);
     }
 
     channelSubs.add(sub);
@@ -112,7 +111,7 @@ public class PubSubRouter implements PubSubMessager, Subscriber {
     // stops the subscription to this channel if the unsubscribed was the last subscriber
     if (channelSubs.isEmpty()) {
       subscribers.remove(hashableChannel);
-      subscription.removeChannel(safeChannel);
+      pubSubClient.removeChannel(safeChannel);
     }
   }
 
@@ -127,11 +126,11 @@ public class PubSubRouter implements PubSubMessager, Subscriber {
     Set<Subscriber> channelSubs = subscribers.get(hashableChannel);
 
     if (channelSubs == null) { // We should not still be listening
-      subscription.removeChannel(channel);
+      pubSubClient.removeChannel(channel);
       return;
     } else if (channelSubs.isEmpty()) {
       subscribers.remove(hashableChannel);
-      subscription.removeChannel(channel);
+      pubSubClient.removeChannel(channel);
       return;
     }
 

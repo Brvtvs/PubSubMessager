@@ -27,6 +27,18 @@
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+			<version>17.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.jodah</groupId>
+			<artifactId>expiringmap</artifactId>
+			<version>0.3.1</version>
+			<scope>compile</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -55,10 +67,17 @@
 						</goals>
 					</execution>
 				</executions>
-				<!-- configuration> <relocations> <relocation> <pattern>redis.clients</pattern> 
-					<shadedPattern>io.brutus.networking.pubsubmessager.shaded</shadedPattern> 
-					</relocation> <relocation> <pattern>org.apache</pattern> <shadedPattern>io.brutus.networking.pubsubmessager.shaded</shadedPattern> 
-					</relocation> </relocations> </configuration -->
+				<configuration>
+					<relocations>
+						<relocation>
+							<pattern>net.jodah</pattern>
+							<shadedPattern>io.brutus.networking.pubsubmessager.shaded.net.jodah</shadedPattern>
+						</relocation>
+						<!-- relocation> <pattern>redis.clients</pattern> <shadedPattern>io.brutus.networking.pubsubmessager.shaded</shadedPattern> 
+							</relocation> <relocation> <pattern>org.apache</pattern> <shadedPattern>io.brutus.networking.pubsubmessager.shaded</shadedPattern> 
+							</relocation -->
+					</relocations>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
