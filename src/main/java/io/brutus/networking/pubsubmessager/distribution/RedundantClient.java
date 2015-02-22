@@ -41,13 +41,13 @@ import com.google.common.util.concurrent.SettableFuture;
 public abstract class RedundantClient implements PubSubLibraryClient, Subscriber,
     ExpirationListener<PubSubLibraryClient, Long> {
 
-  private static ExecutorService threadPool;
-
   // number of instances to allow to try and fail for an individual message before giving up. The
   // same instance is not tried twice.
   private static final int MAX_TRIES = 5;
   // length of time to distrust a pub/sub instance if it fails a publish attempt
   private static final long DISTRUST_MILLIS = 60000;
+
+  private static ExecutorService threadPool;
 
   private Subscriber subscriber;
   private Set<ByteArrayWrapper> subscribedTo;
@@ -175,7 +175,9 @@ public abstract class RedundantClient implements PubSubLibraryClient, Subscriber
 
   @Override
   public final void expired(PubSubLibraryClient client, Long distrustStarted) {
-    trusted.add(client);
+    if (pubSubClients.contains(client)) {
+      trusted.add(client);
+    }
   }
 
   private final void distrustClient(PubSubLibraryClient client) {
@@ -247,12 +249,15 @@ public abstract class RedundantClient implements PubSubLibraryClient, Subscriber
           } catch (ExecutionException e) {
           }
 
+          if (!successful) {
+            distrustClient(publisher);
+          }
+
           // if successful or too many tries, calls back with the result
           if (successful || attempts >= MAX_TRIES || attempts >= pubSubClients.size()) {
             callback.set(successful);
 
           } else { // else try another messager
-            distrustClient(publisher);
             makeAttempt();
           }
         }
