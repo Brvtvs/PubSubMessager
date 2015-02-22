@@ -21,6 +21,7 @@ public class CentralizingRedundantClient extends RedundantClient {
     if (current == null || !currentlyTrusted.contains(current)) {
       for (PubSubLibraryClient client : currentlyTrusted) {
         current = client;
+        break;
       }
     }
     return current;
