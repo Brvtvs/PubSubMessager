@@ -146,6 +146,9 @@ public abstract class RedundantClient implements PubSubLibraryClient, Subscriber
     if (destroyed || client == null || pubSubClients.contains(client)) {
       return;
     }
+
+    client.setSubscriber(this);
+
     pubSubClients.add(client);
     trusted.add(client);
 
@@ -164,10 +167,15 @@ public abstract class RedundantClient implements PubSubLibraryClient, Subscriber
     if (destroyed) {
       return;
     }
+
     if (pubSubClients.remove(client)) {
+
+      client.setSubscriber(null);
+
       for (ByteArrayWrapper channel : subscribedTo) {
         client.removeChannel(channel.getData());
       }
+
       trusted.remove(client);
       distrusted.remove(client);
     }

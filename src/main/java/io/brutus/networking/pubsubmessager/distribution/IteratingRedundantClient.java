@@ -25,7 +25,7 @@ public class IteratingRedundantClient extends RedundantClient {
     PubSubLibraryClient first = null;
     for (PubSubLibraryClient client : currentlyTrusted) {
       if (first == null) {
-        client = first;
+        first = client;
       }
       if (used.add(client)) {
         return client;
