@@ -56,6 +56,7 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
   private static final long RECONNECT_PERIOD_MILLIS = 800;
   private static final byte[] BASE_CHANNEL = "pG8n5jp#".getBytes(Charset.forName("UTF-8"));
 
+  private String id;
   private final JedisPool jedisPool;
   private final ExecutorService threadPool;
   private volatile Subscriber sub;
@@ -84,6 +85,8 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
     }
     this.threadPool = Executors.newCachedThreadPool();
     this.channels = new HashSet<ByteArrayWrapper>();
+
+    id = redisInstance.getName();
 
     createSubscription(BASE_CHANNEL);
   }
@@ -159,7 +162,8 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
           ret.set(true);
 
         } catch (Exception e) {
-          System.out.println("Encountered issue while publishing a message.");
+          System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+              + "] Encountered issue while publishing a message.");
           e.printStackTrace();
           if (bJedis != null) {
             jedisPool.returnBrokenResource((Jedis) bJedis);
@@ -181,14 +185,14 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
     }
     subscribed = true;
 
-    System.out.println("[JedisClient] Subscribed to channel: "
-        + new String(channel, Charset.forName("UTF-8")));
+    System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+        + "] Subscribed to channel: " + new String(channel, Charset.forName("UTF-8")));
   }
 
   @Override
   public void onUnsubscribe(byte[] channel, int subscribedChannels) {
-    System.out.println("[JedisClient] Unsubscribed from channel: "
-        + new String(channel, Charset.forName("UTF-8")));
+    System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+        + "] Unsubscribed from channel: " + new String(channel, Charset.forName("UTF-8")));
   }
 
   /**
@@ -212,8 +216,8 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
         while (!destroyed) {
 
           if (!first) {
-            System.out
-                .println("[PubSub] Jedis connection failed or was interrupted, attempting to reconnect");
+            System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+                + "] Jedis connection failed or was interrupted, attempting to reconnect");
           }
           first = false;
 
@@ -223,25 +227,29 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
             // gets a non-thread-safe jedis instance from the thread-safe pool.
             jedisInstance = jedisPool.getResource();
 
-            System.out.println("[PubSub] Creating initial jedis subscription to channel "
+            System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+                + "] Creating initial jedis subscription to channel "
                 + new String(firstChannel, Charset.forName("UTF-8")));
             // this will block as long as there are subscriptions
             jedisInstance.subscribe(pubsub, firstChannel);
 
-            System.out.println("[PubSub] jedisInstance.subscribe() returned, subscription over.");
+            System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+                + "] jedisInstance.subscribe() returned, subscription over.");
 
             // when the subscription ends (subscribe() returns), returns the instance to the pool
             jedisPool.returnResource((Jedis) jedisInstance);
 
           } catch (JedisConnectionException e) {
-            System.out.println("[PubSub] Jedis connection encountered an issue.");
+            System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+                + "] Jedis connection encountered an issue.");
             e.printStackTrace();
             if (jedisInstance != null) {
               jedisPool.returnBrokenResource((Jedis) jedisInstance);
             }
 
           } catch (JedisDataException e) {
-            System.out.println("[PubSub] Jedis connection encountered an issue.");
+            System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+                + "] Jedis connection encountered an issue.");
             e.printStackTrace();
             if (jedisInstance != null) {
               jedisPool.returnBrokenResource((Jedis) jedisInstance);
@@ -255,7 +263,8 @@ public class PubSubJedisClient extends BinaryJedisPubSub implements PubSubLibrar
               Thread.sleep(RECONNECT_PERIOD_MILLIS);
             } catch (InterruptedException e) {
               destroyed = true;
-              System.out.println("[PubSub] Reconnection pause thread was interrupted.");
+              System.out.println("[PubSub" + (id != null && !id.isEmpty() ? " " + id : "")
+                  + "] Reconnection pause thread was interrupted.");
               e.printStackTrace();
             }
           }
