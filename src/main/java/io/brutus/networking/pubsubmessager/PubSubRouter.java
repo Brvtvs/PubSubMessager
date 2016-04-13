@@ -27,9 +27,6 @@ public class PubSubRouter implements PubSubMessager, Subscriber {
 
   private final ExecutorService threadPool;
 
-  // TODO consider adding a few more comments to clarify what is going on here
-  // TODO Is this fully, entirely thread-safe?
-
   public PubSubRouter(PubSubLibraryClient client) {
     if (client == null) {
       throw new IllegalArgumentException("jedis pool cannot be null");
